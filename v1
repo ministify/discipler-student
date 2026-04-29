@@ -1,0 +1,936 @@
+<div id="discipler-widget-container" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 2147483647; border: none; padding: 0; margin: 0; overflow: hidden; background: transparent;">
+    <iframe id="discipler-frame" style="width: 100%; height: 100%; border: none; display: block; background: transparent;"></iframe>
+</div>
+<template id="discipler-source">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Discipler Student - Focus & Cloud</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: { 
+                        theme: {
+                            bg: 'var(--bg)',
+                            surface: 'var(--surface)',
+                            surfacehover: 'var(--surface-hover)',
+                            border: 'var(--border)',
+                            text: 'var(--text)',
+                            muted: 'var(--muted)',
+                            accent: 'var(--accent)',
+                            accenthover: 'var(--accent-hover)',
+                            accentbg: 'var(--accent-bg)',
+                        }
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.3s ease-out forwards',
+                        'slide-up': 'slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                        'shake': 'shake 0.4s cubic-bezier(.36,.07,.19,.97) both'
+                    },
+                    keyframes: {
+                        fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
+                        slideUp: { '0%': { opacity: '0', transform: 'translateY(15px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } },
+                        shake: {
+                            '10%, 90%': { transform: 'translate3d(-1px, 0, 0)' },
+                            '20%, 80%': { transform: 'translate3d(2px, 0, 0)' },
+                            '30%, 50%, 70%': { transform: 'translate3d(-4px, 0, 0)' },
+                            '40%, 60%': { transform: 'translate3d(4px, 0, 0)' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        /* CSS VARIABLES FOR THEMING */
+        :root, [data-theme="light"] {
+            --bg: #f8fafc;
+            --surface: rgba(255, 255, 255, 0.85);
+            --surface-hover: #f1f5f9;
+            --border: #e2e8f0;
+            --text: #0f172a;
+            --muted: #64748b;
+            --accent: #0ea5e9;
+            --accent-hover: #0284c7;
+            --accent-bg: #f0f9ff;
+            --dot-color: #cbd5e1;
+        }
+        [data-theme="dark"] {
+            --bg: #0f172a;
+            --surface: rgba(30, 41, 59, 0.85);
+            --surface-hover: #334155;
+            --border: #334155;
+            --text: #f8fafc;
+            --muted: #94a3b8;
+            --accent: #38bdf8;
+            --accent-hover: #7dd3fc;
+            --accent-bg: rgba(56, 189, 248, 0.1);
+            --dot-color: #334155;
+        }
+        [data-theme="green"] {
+            --bg: #f0fdf4;
+            --surface: rgba(255, 255, 255, 0.85);
+            --surface-hover: #dcfce7;
+            --border: #bbf7d0;
+            --text: #14532d;
+            --muted: #166534;
+            --accent: #16a34a;
+            --accent-hover: #15803d;
+            --accent-bg: #dcfce7;
+            --dot-color: #bbf7d0;
+        }
+        [data-theme="sunset"] {
+            --bg: #fff7ed;
+            --surface: rgba(255, 255, 255, 0.85);
+            --surface-hover: #ffedd5;
+            --border: #fed7aa;
+            --text: #7c2d12;
+            --muted: #9a3412;
+            --accent: #f97316;
+            --accent-hover: #ea580c;
+            --accent-bg: #ffedd5;
+            --dot-color: #fed7aa;
+        }
+
+        body { 
+            font-family: 'Inter', sans-serif; 
+            height: 100vh; 
+            overflow: hidden; 
+            background-color: var(--bg);
+            background-image: radial-gradient(var(--dot-color) 1px, transparent 1px);
+            background-size: 24px 24px;
+            color: var(--text);
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        
+        @media (min-width: 1024px) {
+            #sidebar { 
+                transform: translateX(0) !important; 
+                position: relative !important; 
+                width: 340px !important;
+                border-right: 1px solid var(--border);
+                height: 100vh !important;
+                display: flex !important;
+                flex-direction: column;
+            }
+            #sidebar-backdrop { display: none !important; }
+            #mobile-nav { display: none !important; }
+            .desktop-layout { display: flex !important; flex-direction: row !important; height: 100vh; }
+            .view-container { flex-grow: 1; position: relative; height: 100vh; overflow: hidden; padding-top: 0 !important; }
+            .mobile-header-spacer { display: none !important; }
+        }
+
+        .pt-safe-top { padding-top: env(safe-area-inset-top, 20px); }
+        .mobile-header-spacer { height: calc(3.5rem + env(safe-area-inset-top, 20px)); }
+
+        .chevron { transition: transform 0.2s ease; }
+        .chevron.collapsed { transform: rotate(-90deg); }
+
+        .app-view { display: none; height: 100%; width: 100%; flex-direction: column; overflow: hidden; opacity: 0; }
+        .app-view.active { display: flex; animation: fadeIn 0.3s ease-out forwards; }
+
+        .video-container { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 12px; margin: 24px 0; background: #000; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); }
+        .video-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+
+        .dash-card { transition: all 0.3s ease; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+        .dash-card:hover { transform: translateY(-4px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); border-color: var(--accent); }
+
+        .delay-100 { animation-delay: 100ms; } .delay-150 { animation-delay: 150ms; } .delay-200 { animation-delay: 200ms; } .delay-250 { animation-delay: 250ms; }
+        .pin-dot { -webkit-text-security: disc; }
+        
+        .prose a { color: var(--accent); text-decoration-color: var(--border); transition: all 0.2s; }
+        .prose a:hover { text-decoration-color: var(--accent); }
+        .prose h1, .prose h2, .prose h3, .prose h4, .prose strong { color: var(--text); }
+        .glass-panel { background: var(--surface); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
+    </style>
+</head>
+<body>
+
+    <nav id="mobile-nav" class="fixed top-0 inset-x-0 glass-panel border-b border-theme-border z-[60] pt-safe-top lg:hidden shadow-sm transition-transform duration-300">
+        <div class="flex justify-between items-center h-14 px-6">
+            <button id="nav-home" class="p-2 text-theme-accent flex items-center gap-2 active:scale-95 transition-transform">
+                <div class="w-8 h-8 bg-theme-accent rounded-lg flex items-center justify-center text-white font-black text-sm shadow-md">S</div>
+                <span class="font-bold text-theme-text text-lg">Student</span>
+            </button>
+            <button id="nav-menu" class="p-2 text-theme-muted hover:bg-theme-surfacehover rounded-full transition-colors active:scale-95">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
+            </button>
+        </div>
+    </nav>
+
+    <div class="desktop-layout h-full relative z-10">
+        <aside id="sidebar" class="fixed inset-y-0 left-0 z-[70] w-[85vw] max-w-sm glass-panel transform -translate-x-full transition-transform duration-300 shadow-2xl lg:shadow-none pt-safe-top lg:pt-0">
+            <div class="flex flex-col h-full">
+                <div class="p-5 border-b border-theme-border z-10 flex-shrink-0">
+                    <div class="flex justify-between items-start mb-6">
+                        <div class="flex flex-col">
+                            <div id="sidebar-logo" class="flex items-center gap-3 cursor-pointer lg:flex transition-transform hover:scale-105 origin-left">
+                                <div class="w-10 h-10 bg-theme-accent rounded-xl flex items-center justify-center text-white font-black text-xl hidden lg:flex shadow-lg shadow-theme-accent/30">S</div>
+                                <h2 class="text-2xl font-black text-theme-text tracking-tight hidden lg:block">STUDENT</h2>
+                                <h2 class="text-xl font-black text-theme-text lg:hidden tracking-tight">Library</h2>
+                            </div>
+                        </div>
+                        <button id="close-sidebar" class="lg:hidden p-2 text-theme-muted bg-theme-surfacehover rounded-full active:scale-95 transition-transform"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button>
+                    </div>
+                    
+                    <div class="flex justify-between items-center mb-4 bg-theme-surfacehover p-2.5 rounded-xl border border-theme-border">
+                        <span class="text-[10px] font-bold text-theme-muted uppercase tracking-wider pl-1">Theme</span>
+                        <div class="flex gap-2">
+                            <button onclick="setTheme('light')" class="w-6 h-6 rounded-full bg-slate-100 border-2 border-slate-300 shadow-sm hover:scale-110 transition-transform" title="Light"></button>
+                            <button onclick="setTheme('dark')" class="w-6 h-6 rounded-full bg-slate-800 border-2 border-slate-600 shadow-sm hover:scale-110 transition-transform" title="Dark"></button>
+                            <button onclick="setTheme('green')" class="w-6 h-6 rounded-full bg-green-100 border-2 border-green-300 shadow-sm hover:scale-110 transition-transform" title="Green"></button>
+                            <button onclick="setTheme('sunset')" class="w-6 h-6 rounded-full bg-orange-100 border-2 border-orange-300 shadow-sm hover:scale-110 transition-transform" title="Sunset"></button>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-2 mb-4">
+                        <button id="btn-import" class="flex-1 bg-theme-accentbg text-theme-accent border border-theme-accent/20 hover:border-theme-accent hover:shadow-md py-2.5 rounded-xl text-xs font-bold tracking-wider transition-all flex items-center justify-center gap-2 active:scale-95">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                            LOAD DATA
+                        </button>
+                        <button id="btn-setup-pin" class="w-11 flex-shrink-0 bg-theme-surfacehover border border-theme-border text-theme-muted hover:text-theme-text rounded-xl flex items-center justify-center transition-all active:scale-95 relative" title="Toggle Focus PIN">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                            <span id="pin-indicator" class="absolute top-2 right-2.5 w-2 h-2 bg-red-500 rounded-full border border-white transition-colors"></span>
+                        </button>
+                        <input type="file" id="file-import" hidden accept=".json">
+                    </div>
+
+                    <div class="relative group">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <svg class="w-4 h-4 text-theme-muted group-focus-within:text-theme-accent transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                        </div>
+                        <input type="search" id="search-input" placeholder="Search lessons..." class="w-full bg-theme-surfacehover border border-theme-border rounded-xl py-2.5 pl-9 pr-4 text-sm text-theme-text placeholder:text-theme-muted focus:ring-2 focus:ring-theme-accent/20 focus:border-theme-accent outline-none transition-all">
+                    </div>
+                </div>
+                
+                <div id="plans-list" class="flex-grow overflow-y-auto px-4 py-2 space-y-1 no-scrollbar">
+                </div>
+            </div>
+        </aside>
+
+        <div id="sidebar-backdrop" class="fixed inset-0 bg-black/40 z-[65] hidden backdrop-blur-sm lg:hidden transition-opacity"></div>
+
+        <main class="view-container">
+            <div class="mobile-header-spacer flex-shrink-0"></div>
+
+            <div id="dashboard-view" class="app-view active">
+                <header class="px-6 py-6 lg:px-10 lg:py-8 flex justify-between items-center z-10">
+                    <div class="flex items-center gap-4 animate-fade-in">
+                        <h1 class="text-2xl lg:text-3xl font-black text-theme-text tracking-tight hidden lg:block">Class Overview</h1>
+                        <h1 class="text-sm font-bold text-theme-muted uppercase tracking-widest lg:hidden">Overview</h1>
+                    </div>
+                </header>
+
+                <div class="flex-grow overflow-y-auto px-4 lg:px-10 pb-32 no-scrollbar">
+                    <div class="max-w-7xl mx-auto w-full">
+                        
+                        <div id="dash-recent" class="hidden mb-6 lg:mb-8 animate-slide-up w-full">
+                            </div>
+
+                        <div class="grid grid-cols-2 gap-3 lg:gap-4 mb-8 md:hidden w-full animate-slide-up delay-100">
+                            <button onclick="openDashModal('announcements', 'Announcements')" class="glass-panel p-4 rounded-2xl border border-theme-border flex flex-col items-center justify-center gap-3 text-theme-text hover:border-theme-accent transition-colors active:scale-95 shadow-sm border-b-4 border-b-theme-accent">
+                                <div class="p-3 bg-theme-accentbg text-theme-accent rounded-xl"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"></path></svg></div>
+                                <span class="text-[11px] font-black uppercase tracking-widest text-theme-muted">Announce</span>
+                            </button>
+                            <button onclick="openDashModal('schedule', 'Schedule')" class="glass-panel p-4 rounded-2xl border border-theme-border flex flex-col items-center justify-center gap-3 text-theme-text hover:border-theme-accent transition-colors active:scale-95 shadow-sm">
+                                <div class="p-3 bg-theme-accentbg text-theme-accent rounded-xl"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg></div>
+                                <span class="text-[11px] font-black uppercase tracking-widest text-theme-muted">Schedule</span>
+                            </button>
+                            <button onclick="openDashModal('tasks', 'Tasks')" class="glass-panel p-4 rounded-2xl border border-theme-border flex flex-col items-center justify-center gap-3 text-theme-text hover:border-theme-accent transition-colors active:scale-95 shadow-sm">
+                                <div class="p-3 bg-theme-accentbg text-theme-accent rounded-xl"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg></div>
+                                <span class="text-[11px] font-black uppercase tracking-widest text-theme-muted">Tasks</span>
+                            </button>
+                            <button onclick="openDashModal('pointers', 'Pointers')" class="glass-panel p-4 rounded-2xl border border-theme-border flex flex-col items-center justify-center gap-3 text-theme-text hover:border-theme-accent transition-colors active:scale-95 shadow-sm">
+                                <div class="p-3 bg-theme-accentbg text-theme-accent rounded-xl"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg></div>
+                                <span class="text-[11px] font-black uppercase tracking-widest text-theme-muted">Pointers</span>
+                            </button>
+                            <button onclick="openDashModal('resources', 'Resources Links')" class="col-span-2 glass-panel p-4 rounded-2xl border border-theme-border flex flex-row items-center justify-center gap-3 text-theme-text hover:border-theme-accent transition-colors active:scale-95 shadow-sm">
+                                <div class="p-2 bg-theme-accentbg text-theme-accent rounded-lg"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg></div>
+                                <span class="text-[11px] font-black uppercase tracking-widest text-theme-muted">Resources & Links</span>
+                            </button>
+                        </div>
+
+                        <div class="hidden md:block md:columns-2 xl:columns-3 gap-4 lg:gap-6 w-full">
+                            <div class="break-inside-avoid w-full mb-4 lg:mb-6 glass-panel rounded-3xl border p-6 dash-card animate-slide-up delay-100 border-l-4 border-l-theme-accent inline-block">
+                                <div class="flex items-center gap-2 mb-4">
+                                    <div class="p-2 bg-theme-accentbg text-theme-accent rounded-lg"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"></path></svg></div>
+                                    <h3 class="text-[11px] font-bold text-theme-accent uppercase tracking-widest">Announcements</h3>
+                                </div>
+                                <div id="dash-announcements" class="space-y-3 text-theme-muted text-sm leading-relaxed">Load a class file to see data.</div>
+                            </div>
+
+                            <div class="break-inside-avoid w-full mb-4 lg:mb-6 glass-panel rounded-3xl border border-theme-border p-6 dash-card animate-slide-up delay-150 group inline-block">
+                                <div class="flex items-center gap-2 mb-4">
+                                    <div class="p-2 bg-theme-accentbg text-theme-accent rounded-lg group-hover:bg-theme-accent group-hover:text-white transition-colors"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg></div>
+                                    <h3 class="text-[11px] font-bold text-theme-accent uppercase tracking-widest">Schedule</h3>
+                                </div>
+                                <div id="dash-schedule" class="text-sm font-medium text-theme-text leading-relaxed">Load a class file to see data.</div>
+                            </div>
+
+                            <div class="break-inside-avoid w-full mb-4 lg:mb-6 glass-panel rounded-3xl border border-theme-border p-6 dash-card animate-slide-up delay-200 group inline-block">
+                                <div class="flex items-center gap-2 mb-4">
+                                    <div class="p-2 bg-theme-accentbg text-theme-accent rounded-lg group-hover:bg-theme-accent group-hover:text-white transition-colors"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg></div>
+                                    <h3 class="text-[11px] font-bold text-theme-accent uppercase tracking-widest">Tasks</h3>
+                                </div>
+                                <div id="dash-assignments" class="text-sm space-y-3 text-theme-muted">Load a class file to see data.</div>
+                            </div> 
+
+                            <div class="break-inside-avoid w-full mb-4 lg:mb-6 glass-panel rounded-3xl border border-theme-border p-6 dash-card animate-slide-up delay-250 group inline-block">
+                                <div class="flex items-center gap-2 mb-4">
+                                    <div class="p-2 bg-theme-accentbg text-theme-accent rounded-lg group-hover:bg-theme-accent group-hover:text-white transition-colors"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg></div>
+                                    <h3 class="text-[11px] font-bold text-theme-accent uppercase tracking-widest">Pointers</h3>
+                                </div>
+                                <div id="dash-pointers" class="text-sm space-y-3 text-theme-muted">Load a class file to see data.</div>
+                            </div>
+
+                            <div class="break-inside-avoid w-full mb-4 lg:mb-6 glass-panel rounded-3xl border border-theme-border p-6 dash-card animate-slide-up delay-250 group inline-block">
+                                <div class="flex items-center gap-2 mb-4">
+                                    <div class="p-2 bg-theme-accentbg text-theme-accent rounded-lg group-hover:bg-theme-accent group-hover:text-white transition-colors"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg></div>
+                                    <h3 class="text-[11px] font-bold text-theme-accent uppercase tracking-widest">Resources Links</h3>
+                                </div>
+                                <div id="dash-resources" class="text-sm text-theme-muted flex flex-col gap-3">Load a class file to see data.</div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <div id="preview-view" class="app-view bg-theme-bg/60 backdrop-blur-2xl">
+                <div class="sticky top-0 glass-panel border-b border-theme-border p-4 lg:px-8 flex justify-between items-center z-20 shadow-sm transition-colors">
+                    <button id="back-from-preview" class="px-3 py-2 -ml-2 text-theme-muted hover:text-theme-accent hover:bg-theme-surfacehover rounded-xl flex items-center gap-2 transition-all active:scale-95">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+                        <span class="text-sm font-bold tracking-wide lg:inline hidden">Back to Overview</span>
+                    </button>
+                </div>
+                <div class="overflow-y-auto p-4 lg:p-12 w-full h-full pb-32 no-scrollbar">
+                    <div class="max-w-4xl mx-auto glass-panel p-6 md:p-10 lg:p-14 rounded-2xl md:rounded-[2rem] shadow-xl border border-theme-border">
+                        <div id="preview-meta" class="mb-5 flex items-center gap-2"></div>
+                        <h1 id="preview-title" class="text-3xl md:text-4xl lg:text-5xl font-black mb-8 text-theme-text leading-tight tracking-tight"></h1>
+                        <div id="preview-body" class="prose prose-lg max-w-none text-theme-text"></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="dash-modal" class="fixed inset-0 bg-black/60 backdrop-blur-md z-[80] flex flex-col items-center justify-center hidden opacity-0 transition-opacity duration-300 p-4">
+        <div class="glass-panel w-full max-w-lg max-h-[85vh] flex flex-col rounded-3xl shadow-2xl border border-theme-border transform scale-95 transition-transform duration-300" id="dash-modal-content">
+            <div class="flex items-center justify-between p-5 border-b border-theme-border bg-theme-surface">
+                <div class="flex items-center gap-3" id="dash-modal-header">
+                    </div>
+                <button onclick="closeDashModal()" class="p-2 rounded-full hover:bg-theme-surfacehover text-theme-muted hover:text-theme-text transition-colors">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div id="dash-modal-body" class="p-5 overflow-y-auto no-scrollbar flex-1 flex flex-col gap-3">
+                </div>
+        </div>
+    </div>
+
+    <div id="update-modal" class="fixed inset-0 bg-black/70 backdrop-blur-md z-[90] flex items-center justify-center hidden opacity-0 transition-opacity duration-300 p-4">
+        <div class="glass-panel w-full max-w-sm flex flex-col rounded-[2rem] shadow-2xl border border-theme-border p-8 text-center transform scale-95 transition-transform duration-300" id="update-modal-content">
+            <div class="w-20 h-20 bg-theme-accentbg text-theme-accent rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner animate-pulse">
+                <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+            </div>
+            <h3 class="text-2xl font-black text-theme-text mb-2 tracking-tight">New Update!</h3>
+            <p class="text-theme-muted text-sm mb-8 leading-relaxed">Your teacher has published new class data. Would you like to sync it now?</p>
+            <div class="flex gap-3">
+                <button onclick="closeUpdateAlert()" class="flex-1 px-4 py-3.5 rounded-xl border-2 border-theme-border text-theme-muted font-bold text-sm hover:bg-theme-surfacehover transition-colors active:scale-95">Later</button>
+                <button id="btn-apply-update" class="flex-1 px-4 py-3.5 rounded-xl bg-theme-accent text-white font-bold text-sm hover:bg-theme-accenthover transition-colors shadow-lg shadow-theme-accent/30 active:scale-95">Sync Now</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="lock-screen" class="fixed inset-0 bg-theme-bg/95 backdrop-blur-xl z-[9999] flex flex-col items-center justify-center hidden opacity-0 transition-opacity duration-300">
+        <div class="glass-panel p-8 lg:p-10 rounded-[2rem] shadow-2xl border border-theme-border max-w-sm w-full mx-4 text-center transform scale-95 transition-transform duration-300 relative overflow-hidden" id="lock-modal">
+            <div class="absolute top-0 inset-x-0 h-2 bg-theme-accent"></div>
+            
+            <div class="w-20 h-20 bg-theme-accentbg text-theme-accent rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
+                <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+            </div>
+            
+            <h2 class="text-2xl font-black text-theme-text tracking-tight mb-2">Focus Mode</h2>
+            <p class="text-theme-muted text-sm mb-8 leading-relaxed">Enter PIN to resume studying.</p>
+            
+            <div class="mb-8 relative">
+                <input type="password" inputmode="numeric" id="pin-input" class="pin-dot w-full text-center text-4xl tracking-[0.5em] font-black text-theme-text bg-theme-surfacehover border-2 border-theme-border rounded-2xl py-4 outline-none focus:border-theme-accent focus:ring-4 focus:ring-theme-accent/20 transition-all placeholder:text-theme-muted placeholder:font-normal placeholder:tracking-normal" maxlength="4" placeholder="••••">
+            </div>
+            
+            <button id="btn-unlock" class="w-full bg-theme-accent hover:bg-theme-accenthover text-white font-bold tracking-wider py-4 rounded-2xl transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2">
+                UNLOCK <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+            </button>
+        </div>
+    </div>
+
+    <script>
+    /** --- CLOUD SOURCE CONFIG --- **/
+    const CLOUD_JSON_URL = 'https://raw.githubusercontent.com/ministify/discipler/refs/heads/main/feb-9-class.json'; 
+
+    /** THEME SYSTEM **/
+    function setTheme(themeName) {
+        document.documentElement.setAttribute('data-theme', themeName);
+        localStorage.setItem('discipler_theme', themeName);
+    }
+    const savedTheme = localStorage.getItem('discipler_theme') || 'light';
+    setTheme(savedTheme);
+
+    /** DATABASE **/
+    const DB={
+        name:'DisciplerCMS', version:6, db:null,
+        async connect(){
+            if(this.db)return this.db;
+            return new Promise(res=>{
+                const req=indexedDB.open(this.name,this.version);
+                req.onupgradeneeded=e=>{
+                    const db=e.target.result;
+                    if(!db.objectStoreNames.contains('studies')) db.createObjectStore('studies',{keyPath:'id'});
+                    if(!db.objectStoreNames.contains('dashboard')) db.createObjectStore('dashboard',{keyPath:'id'});
+                };
+                req.onsuccess=e=>{this.db=e.target.result;res(this.db)}
+            })
+        },
+        async getMeta(){await this.connect();return new Promise(res=>{const items=[];this.db.transaction('studies','readonly').objectStore('studies').openCursor().onsuccess=e=>{const c=e.target.result;if(c){items.push(c.value);c.continue()}else res(items)}})},
+        async savePlan(p){await this.connect();this.db.transaction('studies','readwrite').objectStore('studies').put(p)},
+        async getDashboard(){await this.connect();return new Promise(res=>{const req=this.db.transaction('dashboard','readonly').objectStore('dashboard').getAll();req.onsuccess=()=>res(req.result.reduce((acc,i)=>{acc[i.id]=i.data;return acc},{}))})},
+        async bulkImport(d){await this.connect();const tx=this.db.transaction(['studies','dashboard'],'readwrite');(d.studies||[]).forEach(s=>tx.objectStore('studies').put(s));(d.dashboard||[]).forEach(x=>tx.objectStore('dashboard').put(x))}
+    };
+
+    let collapsedCategories = {};
+    let currentDashData = {};
+
+    async function init(){
+        await DB.connect();
+        
+        const goHome = async () => {
+            await renderDash();
+            await refreshSidebar();
+            switchView('dashboard-view');
+            checkForUpdates(); // Check for updates when returning to dashboard
+        };
+        
+        document.getElementById('nav-home').addEventListener('click', goHome);
+        document.getElementById('back-from-preview').addEventListener('click', goHome);
+        document.getElementById('sidebar-logo').addEventListener('click', goHome);
+        
+        document.getElementById('nav-menu').addEventListener('click', () => toggleSidebar(true));
+        document.getElementById('close-sidebar').addEventListener('click', () => toggleSidebar(false));
+        document.getElementById('sidebar-backdrop').addEventListener('click', () => toggleSidebar(false));
+
+        document.getElementById('btn-import').addEventListener('click', () => document.getElementById('file-import').click());
+        document.getElementById('file-import').addEventListener('change', importBackup);
+        document.getElementById('search-input').addEventListener('input', (e) => filterLessons(e.target.value));
+
+        initPinSystem();
+
+        await renderDash();
+        await refreshSidebar();
+        
+        // Initial Startup Check
+        checkForUpdates();
+    }
+
+    // --- CLOUD FETCH SYSTEM ---
+    async function checkForUpdates() {
+        if(!CLOUD_JSON_URL || CLOUD_JSON_URL.trim() === '') return;
+        try {
+            // Added cache: 'no-store' to bypass strict GitHub raw caching
+            const res = await fetch(CLOUD_JSON_URL + '?t=' + Date.now(), { cache: 'no-store' });
+            if(!res.ok) return;
+            
+            const cloudData = await res.json();
+            const localMeta = await DB.getMeta();
+            
+            // Calculate highest timestamps correctly
+            const localLatest = localMeta.length > 0 
+                ? Math.max(...localMeta.map(m => new Date(m.updated || 0).getTime())) 
+                : 0;
+
+            const cloudLatest = (cloudData.studies && cloudData.studies.length > 0) 
+                ? Math.max(...cloudData.studies.map(m => new Date(m.updated || 0).getTime())) 
+                : 0;
+
+            if(cloudLatest > localLatest || (localMeta.length === 0 && cloudData.studies && cloudData.studies.length > 0)) {
+                showUpdateAlert(cloudData);
+            }
+        } catch(e) {
+            console.warn("Could not check for cloud updates:", e);
+        }
+    }
+
+    function showUpdateAlert(cloudData) {
+        const modal = document.getElementById('update-modal');
+        const contentBox = document.getElementById('update-modal-content');
+        
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+            modal.classList.remove('opacity-0');
+            contentBox.classList.remove('scale-95');
+        }, 10);
+        
+        document.getElementById('btn-apply-update').onclick = async () => {
+            await DB.bulkImport(cloudData);
+            await renderDash();
+            await refreshSidebar();
+            closeUpdateAlert();
+        };
+    }
+
+    function closeUpdateAlert() {
+        const modal = document.getElementById('update-modal');
+        const contentBox = document.getElementById('update-modal-content');
+        modal.classList.add('opacity-0');
+        contentBox.classList.add('scale-95');
+        setTimeout(() => modal.classList.add('hidden'), 300);
+    }
+
+    // --- PIN TOGGLE SYSTEM ---
+    const HARDCODED_PIN = '9653';
+    let isPinEnabled = localStorage.getItem('discipler_pin_enabled') === 'true'; 
+    let isLocked = false;
+
+    function initPinSystem() {
+        updatePinUI();
+
+        document.getElementById('btn-setup-pin').addEventListener('click', () => {
+            if(isPinEnabled) {
+                let p = prompt("Enter Teacher PIN to disable Focus Mode:");
+                if(p === HARDCODED_PIN) {
+                    isPinEnabled = false;
+                    localStorage.setItem('discipler_pin_enabled', 'false');
+                    updatePinUI();
+                    alert("Focus Mode disabled.");
+                } else if(p !== null) {
+                    alert("Incorrect PIN. Focus Mode remains active.");
+                }
+            } else {
+                // Prompt for PIN when enabling
+                let p = prompt("Enter Teacher PIN to enable Focus Mode:");
+                if(p === HARDCODED_PIN) {
+                    isPinEnabled = true;
+                    localStorage.setItem('discipler_pin_enabled', 'true');
+                    updatePinUI();
+                    alert("Focus Mode Enabled! Switching tabs will now lock the screen.");
+                } else if (p !== null) {
+                    alert("Incorrect PIN. Focus Mode was not enabled.");
+                }
+            }
+        });
+
+        document.getElementById('btn-unlock').addEventListener('click', handlePinSubmit);
+        document.getElementById('pin-input').addEventListener('keyup', (e) => { 
+            if(e.key === 'Enter') handlePinSubmit(); 
+        });
+
+        window.addEventListener('blur', () => { if(isPinEnabled && !isLocked) showLockScreen(); });
+        document.addEventListener('visibilitychange', () => {
+            if (isPinEnabled && document.visibilityState === 'hidden' && !isLocked) showLockScreen();
+        });
+    }
+
+    function updatePinUI() {
+        const btn = document.getElementById('btn-setup-pin');
+        const dot = document.getElementById('pin-indicator');
+        if(isPinEnabled) {
+            btn.classList.replace('bg-theme-surfacehover', 'bg-theme-accentbg');
+            btn.classList.replace('text-theme-muted', 'text-theme-accent');
+            dot.classList.replace('bg-red-500', 'bg-green-500');
+            dot.classList.remove('hidden');
+        } else {
+            btn.classList.replace('bg-theme-accentbg', 'bg-theme-surfacehover');
+            btn.classList.replace('text-theme-accent', 'text-theme-muted');
+            dot.classList.replace('bg-green-500', 'bg-red-500');
+            dot.classList.add('hidden');
+        }
+    }
+
+    function showLockScreen() {
+        isLocked = true;
+        const lockScreen = document.getElementById('lock-screen');
+        const lockModal = document.getElementById('lock-modal');
+        document.getElementById('pin-input').value = '';
+        
+        lockScreen.classList.remove('hidden');
+        setTimeout(() => { 
+            lockScreen.classList.remove('opacity-0'); 
+            lockModal.classList.remove('scale-95'); 
+            document.getElementById('pin-input').focus(); 
+        }, 10);
+    }
+
+    function hideLockScreen() {
+        const lockScreen = document.getElementById('lock-screen');
+        const lockModal = document.getElementById('lock-modal');
+        lockScreen.classList.add('opacity-0');
+        lockModal.classList.add('scale-95');
+        setTimeout(() => { 
+            lockScreen.classList.add('hidden'); 
+            isLocked = false;
+        }, 300);
+    }
+
+    function handlePinSubmit() {
+        const input = document.getElementById('pin-input');
+        const val = input.value;
+        const modal = document.getElementById('lock-modal');
+
+        if(val === HARDCODED_PIN) { 
+            hideLockScreen(); 
+        } else { 
+            modal.classList.add('animate-shake');
+            input.classList.add('border-red-500', 'text-red-500');
+            setTimeout(() => {
+                modal.classList.remove('animate-shake');
+                input.classList.remove('border-red-500', 'text-red-500');
+                input.value = ''; input.focus();
+            }, 400);
+        }
+    }
+
+    // --- MOBILE MODAL SYSTEM ---
+    const dashIcons = {
+        announcements: `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"></path></svg>`,
+        schedule: `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>`,
+        tasks: `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>`,
+        pointers: `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>`,
+        resources: `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>`
+    };
+
+    function openDashModal(type, title) {
+        const modal = document.getElementById('dash-modal');
+        const contentBox = document.getElementById('dash-modal-content');
+        const header = document.getElementById('dash-modal-header');
+        const body = document.getElementById('dash-modal-body');
+        
+        const empty = '<div class="text-theme-muted italic text-center py-8 text-sm">Nothing here yet.</div>';
+        const d = currentDashData;
+        let html = empty;
+
+        if (type === 'announcements') {
+            html = (d.announcements || '').split('\n').filter(x=>x).map(l=>`<div class="bg-theme-surfacehover p-4 rounded-xl border border-theme-border text-sm text-theme-text shadow-sm">${l}</div>`).join('') || empty;
+        } else if (type === 'schedule') {
+            html = `<div class="text-sm font-medium text-theme-text leading-relaxed p-2">${(d.schedule || '').replace(/\n/g, '<br>') || empty}</div>`;
+        } else if (type === 'tasks') {
+            html = (d.assignments || '').split('\n').filter(x=>x).map(l=>`<div class="flex items-start gap-3 bg-theme-surfacehover p-3.5 rounded-xl border border-theme-border shadow-sm"><div class="mt-1 w-2 h-2 rounded-full bg-theme-accent shrink-0"></div><span class="text-theme-text text-sm">${l}</span></div>`).join('') || empty;
+        } else if (type === 'pointers') {
+            html = (d.pointers || '').split('\n').filter(x=>x).map(l=>`<div class="flex items-start gap-3 bg-theme-surfacehover p-3.5 rounded-xl border border-theme-border shadow-sm"><div class="mt-1 w-2 h-2 rounded-full bg-theme-accent shrink-0"></div><span class="text-theme-text text-sm">${l}</span></div>`).join('') || empty;
+        } else if (type === 'resources') {
+            const lines = (d.resources || '').split('\n').filter(l => l.trim() !== '');
+            if(lines.length > 0) {
+                html = lines.map(l => {
+                    let url = l.trim();
+                    if (!url.startsWith('http') && !url.includes(' ')) url = 'https://' + url;
+                    return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="bg-theme-surfacehover hover:border-theme-accent border border-theme-border p-4 rounded-xl text-theme-accent flex items-center gap-3 transition-all duration-300 cursor-pointer shadow-sm w-full"><svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg><span class="truncate font-medium flex-1 text-sm">${l}</span></a>`;
+                }).join('');
+            }
+        }
+
+        header.innerHTML = `
+            <div class="p-2 bg-theme-accentbg text-theme-accent rounded-xl">${dashIcons[type]}</div>
+            <h3 class="text-lg font-black text-theme-text tracking-tight">${title}</h3>
+        `;
+        body.innerHTML = html;
+
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+            modal.classList.remove('opacity-0');
+            contentBox.classList.remove('scale-95');
+        }, 10);
+    }
+
+    function closeDashModal() {
+        const modal = document.getElementById('dash-modal');
+        const contentBox = document.getElementById('dash-modal-content');
+        modal.classList.add('opacity-0');
+        contentBox.classList.add('scale-95');
+        setTimeout(() => { modal.classList.add('hidden'); }, 300);
+    }
+
+    // --- DASHBOARD (DESKTOP MASONRY & RECENT BANNER) ---
+    async function renderDash(){
+        currentDashData = await DB.getDashboard();
+        const d = currentDashData;
+        const empty = '<div class="text-theme-muted italic text-xs">Nothing here yet.</div>';
+        
+        // Populate Desktop Views
+        document.getElementById('dash-announcements').innerHTML = (d.announcements || 'No announcements.').split('\n').filter(x=>x).map(l=>`<div class="bg-theme-surfacehover p-4 rounded-xl border border-theme-border mb-3 text-sm text-theme-text shadow-sm">${l}</div>`).join('') || empty;
+        document.getElementById('dash-schedule').innerHTML = (d.schedule || 'No schedule set.').replace(/\n/g, '<br>') || empty;
+        document.getElementById('dash-assignments').innerHTML = (d.assignments || 'No tasks.').split('\n').filter(x=>x).map(l=>`<div class="flex items-start gap-3"><div class="mt-1.5 w-1.5 h-1.5 rounded-full bg-theme-accent shrink-0"></div><span class="text-theme-text">${l}</span></div>`).join('') || empty;
+        document.getElementById('dash-pointers').innerHTML = (d.pointers || 'No pointers.').split('\n').filter(x=>x).map(l=>`<div class="flex items-start gap-3"><div class="mt-1.5 w-1.5 h-1.5 rounded-full bg-theme-accent shrink-0"></div><span class="text-theme-text">${l}</span></div>`).join('') || empty;
+        
+        const resourceLines = (d.resources || '').split('\n').filter(l => l.trim() !== '');
+        if (resourceLines.length > 0) {
+            document.getElementById('dash-resources').innerHTML = resourceLines.map(l => {
+                let url = l.trim();
+                if (!url.startsWith('http') && !url.includes(' ')) url = 'https://' + url;
+                return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="bg-theme-surfacehover hover:border-theme-accent border border-theme-border p-3 rounded-xl text-theme-accent flex items-center gap-3 transition-all duration-300 cursor-pointer shadow-sm w-full"><svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg><span class="truncate font-medium flex-1">${l}</span></a>`;
+            }).join('');
+        } else { document.getElementById('dash-resources').innerHTML = empty; }
+
+        const plans = await DB.getMeta();
+        const recentContainer = document.getElementById('dash-recent');
+        
+        if (plans && plans.length > 0) {
+            // Sort by updated descending to get newest first
+            plans.sort((a, b) => new Date(b.updated || 0) - new Date(a.updated || 0));
+            const latest = plans[0];
+            const dateStr = new Date(latest.updated).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+            
+            recentContainer.innerHTML = `
+                <div class="glass-panel rounded-[2rem] border border-theme-border p-6 md:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 relative overflow-hidden group cursor-pointer shadow-sm hover:shadow-md transition-all border-l-4 border-l-theme-accent" onclick="window.loadRecentPlanById('${latest.id}')">
+                    <div class="absolute right-0 top-0 w-32 h-32 bg-theme-accent/5 rounded-full -mr-10 -mt-10 transition-transform group-hover:scale-150"></div>
+                    <div class="z-10 flex-1">
+                        <div class="flex items-center gap-3 mb-3">
+                            <span class="text-[10px] font-bold text-white bg-theme-accent px-2.5 py-1 rounded-md uppercase tracking-widest shadow-sm">Latest Update</span>
+                            <span class="text-[11px] font-bold text-theme-muted font-mono">${dateStr}</span>
+                        </div>
+                        <h2 class="text-xl md:text-2xl font-black text-theme-text leading-tight group-hover:text-theme-accent transition-colors">${latest.title}</h2>
+                        <p class="text-sm text-theme-muted mt-1.5 font-medium">${latest.category || 'Uncategorized'}</p>
+                    </div>
+                    <div class="z-10 bg-theme-surfacehover text-theme-accent p-4 rounded-2xl group-hover:bg-theme-accent group-hover:text-white transition-all shadow-sm">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                    </div>
+                </div>
+            `;
+            recentContainer.classList.remove('hidden');
+        } else {
+            recentContainer.classList.add('hidden');
+        }
+    }
+
+    window.loadRecentPlanById = async (id) => {
+        const plans = await DB.getMeta();
+        const plan = plans.find(p => p.id === id);
+        if(plan) loadPlan(plan);
+    };
+
+    // --- SIDEBAR & LIST ---
+    function toggleCategory(cat) {
+        collapsedCategories[cat] = !collapsedCategories[cat];
+        DB.getMeta().then(plans => { renderLessonList(plans); });
+    }
+
+    async function togglePin(id, e) {
+        e.stopPropagation();
+        const all = await DB.getMeta();
+        const plan = all.find(p => p.id === id);
+        if(plan) {
+            plan.pinned = !plan.pinned;
+            await DB.savePlan(plan);
+            await refreshSidebar();
+        }
+    }
+
+    async function refreshSidebar(){
+        const plans = await DB.getMeta();
+        renderLessonList(plans);
+    }
+
+    function renderLessonList(plans) {
+        const list = document.getElementById('plans-list');
+        list.innerHTML = '';
+        if(plans.length === 0) {
+            list.innerHTML = `
+                <div class="text-center flex flex-col items-center justify-center h-40 opacity-50">
+                    <svg class="w-8 h-8 text-theme-muted mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>
+                    <div class="text-theme-muted font-medium text-xs">No lessons found.</div>
+                </div>`;
+            return;
+        }
+
+        // Sort globally
+        plans.sort((a, b) => new Date(b.updated || 0) - new Date(a.updated || 0));
+
+        const pinned = plans.filter(p => p.pinned);
+        if(pinned.length > 0) {
+            const header = document.createElement('div');
+            header.className = "text-[10px] font-black text-theme-accent uppercase tracking-widest mt-4 mb-2 px-3 flex items-center gap-1.5";
+            header.innerHTML = `<svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z"/></svg> PINNED`;
+            list.appendChild(header);
+            pinned.forEach(p => list.appendChild(createLessonItem(p)));
+            const separator = document.createElement('div');
+            separator.className = "border-b border-theme-border my-3 mx-2";
+            list.appendChild(separator);
+        }
+
+        const unpinned = plans.filter(p => !p.pinned);
+        const catMap = {};
+        unpinned.forEach(p => {
+            const c = p.category || 'Uncategorized';
+            if(!catMap[c]) catMap[c] = [];
+            catMap[c].push(p);
+        });
+
+        const sortedCats = Object.keys(catMap).sort();
+
+        sortedCats.forEach(cat => {
+            const items = catMap[cat];
+
+            const headerDiv = document.createElement('div');
+            headerDiv.className = "flex items-center justify-between cursor-pointer hover:bg-theme-surfacehover rounded-xl px-3 py-2 mt-2 group transition-colors select-none";
+            headerDiv.onclick = () => toggleCategory(cat);
+
+            const isCollapsed = collapsedCategories[cat]; 
+            const chevronClass = isCollapsed ? 'chevron collapsed' : 'chevron';
+            const count = items.length;
+
+            headerDiv.innerHTML = `
+                <div class="flex items-center gap-2">
+                    <span class="text-[10px] font-bold text-theme-muted uppercase tracking-widest">${cat}</span>
+                    <span class="text-[10px] font-bold text-theme-muted bg-theme-surfacehover border border-theme-border px-1.5 rounded-md">${count}</span>
+                </div>
+                <svg class="w-4 h-4 text-theme-muted ${chevronClass}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+            `;
+            list.appendChild(headerDiv);
+
+            if(!isCollapsed) {
+                const itemContainer = document.createElement('div');
+                itemContainer.className = "pl-2 border-l-2 border-theme-border ml-3 mt-1 space-y-1";
+                items.forEach(p => itemContainer.appendChild(createLessonItem(p)));
+                list.appendChild(itemContainer);
+            }
+        });
+    }
+
+    function createLessonItem(p) {
+        const el = document.createElement('div');
+        el.className = "group relative p-3 rounded-xl hover:bg-theme-surfacehover border border-transparent hover:border-theme-border cursor-pointer transition-all hover:shadow-sm";
+        
+        const d = new Date(p.updated);
+        const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        const pinColor = p.pinned ? 'text-theme-accent' : 'text-theme-muted hover:text-theme-text opacity-0 group-hover:opacity-100';
+
+        el.innerHTML = `
+            <div class="flex justify-between items-start">
+                <div class="w-full pr-8">
+                    <div class="font-bold text-theme-text text-sm leading-snug mb-1">${p.title}</div>
+                    <div class="text-[10px] text-theme-muted font-medium font-mono">${dateStr}</div>
+                </div>
+                
+                <div class="absolute right-2 top-2 flex items-center">
+                    <button class="p-1.5 rounded-lg hover:bg-theme-surface shadow-sm transition-all ${pinColor}" onclick="togglePin('${p.id}', event)" title="${p.pinned ? 'Unpin' : 'Pin'}">
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z"/></svg>
+                    </button>
+                </div>
+            </div>
+        `;
+        el.onclick = () => loadPlan(p);
+        return el;
+    }
+
+    function filterLessons(query) {
+        if(!query) { refreshSidebar(); return; }
+        DB.getMeta().then(plans => {
+            const filtered = plans.filter(p => p.title.toLowerCase().includes(query.toLowerCase()) || (p.category||'').toLowerCase().includes(query.toLowerCase()));
+            renderLessonList(filtered);
+        });
+    }
+
+    function loadPlan(p){
+        if(window.innerWidth < 1024) toggleSidebar(false);
+        switchView('preview-view');
+        
+        try {
+            document.getElementById('preview-title').textContent = p.title || 'Untitled Lesson';
+            const cat = p.category || 'Uncategorized';
+            document.getElementById('preview-meta').innerHTML = `<span class="text-[11px] font-bold text-theme-accent bg-theme-accentbg px-3 py-1 rounded-lg uppercase tracking-wider">${cat}</span>`;
+            
+            let content = '';
+            if (Array.isArray(p.content)) content = p.content.join('');
+            else if (typeof p.content === 'string') content = p.content;
+            
+            const ytRegex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/g;
+            content = content.replace(ytRegex, (match, id) => {
+                return `<div class="video-container"><iframe src="https://www.youtube.com/embed/${id}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>`;
+            });
+
+            const dummyDiv = document.createElement('div');
+            dummyDiv.innerHTML = content;
+            
+            function linkifyTextNodes(node) {
+                if (node.nodeType === 3) {
+                    const urlRegex = /(https?:\/\/[^\s]+)/g;
+                    if (urlRegex.test(node.nodeValue)) {
+                        const span = document.createElement('span');
+                        span.innerHTML = node.nodeValue.replace(urlRegex, (url) => {
+                             if(url.includes('youtube.com/embed')) return url;
+                             return `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`;
+                        });
+                        node.parentNode.replaceChild(span, node);
+                    }
+                } else if (node.nodeType === 1 && node.nodeName !== 'A' && node.nodeName !== 'IFRAME') {
+                    Array.from(node.childNodes).forEach(linkifyTextNodes);
+                }
+            }
+            linkifyTextNodes(dummyDiv);
+
+            const existingLinks = dummyDiv.querySelectorAll('a');
+            existingLinks.forEach(link => {
+                link.setAttribute('target', '_blank');
+                link.setAttribute('rel', 'noopener noreferrer');
+            });
+
+            document.getElementById('preview-body').innerHTML = dummyDiv.innerHTML || '<p class="text-theme-muted italic text-center py-10">No content provided.</p>';
+        } catch(e) {
+            console.error(e);
+        }
+    }
+
+    // --- UTILS ---
+    async function importBackup(e) {
+        const file = e.target.files[0];
+        if(!file) return;
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            try {
+                const json = JSON.parse(e.target.result);
+                await DB.bulkImport(json);
+                await renderDash();
+                await refreshSidebar();
+                alert('Class Data Loaded Successfully!');
+            } catch(err) {
+                alert('Invalid Class Data File.');
+            }
+        };
+        reader.readAsText(file);
+    }
+
+    function switchView(id){
+        document.querySelectorAll('.app-view').forEach(v => { v.classList.remove('active'); });
+        const t = document.getElementById(id); 
+        if(t) { t.classList.add('active'); }
+    }
+
+    function toggleSidebar(open){
+        const s = document.getElementById('sidebar'); const b = document.getElementById('sidebar-backdrop');
+        if(open){ s.classList.remove('-translate-x-full'); b.classList.remove('hidden'); } 
+        else { s.classList.add('-translate-x-full'); b.classList.add('hidden'); }
+    }
+
+    init();
+    </script>
+</body>
+</html>
+</template>
+<script>
+    (function() {
+        const template = document.getElementById('discipler-source');
+        const iframe = document.getElementById('discipler-frame');
+        const doc = iframe.contentWindow.document;
+        doc.open();
+        doc.write(template.innerHTML);
+        doc.close();
+    })();
+</script>
